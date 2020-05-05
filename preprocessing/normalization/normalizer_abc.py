@@ -5,7 +5,7 @@ Normalizer abstract base classes
 from __future__ import division
 
 from abc import ABC, abstractmethod
-import build_dataset.normalization.utils.misc_utils as mu
+import preprocessing.normalization.utils.misc_utils as mu
 import spams
 import numpy as np
 

@@ -37,7 +37,7 @@ def generate_helper(pqueue, slides_dir, masks_dir, tile_size, overlap, thres, dw
         print("Put tiled slide [%s] on to queue: [%d]/[%d]" % (slide_name, counter, len(slides_to_process)))
     pqueue.put('Done')
 
-#env_tiles, env_tissue_masks, env_label_masks, batches, len(slides_to_process), counter
+
 def write_batch_data(env_tiles, env_tissue_masks, env_label_masks, env_locations, batch_data, tot_len, start_counter):
     end_counter = start_counter + len(batch_data)
     with env_tiles.begin(write=True) as txn_tiles, env_tissue_masks.begin(write=True) as txn_masks, \
@@ -131,7 +131,7 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
     assert counter == len(slides_to_process), "%d processed slides, %d slides to be processed" \
                                               % (counter, len(slides_to_process))
     print("Number of empty slides: %d" % len(empty_slides))
-    log_df = pd.DataFrame(colums=["slide_name"], data=empty_slides)
+    log_df = pd.DataFrame(columns=["slide_name"], data=empty_slides)
     log_df.to_csv(f"{out_dir}/empty_slides.csv")
 
     slides_tiles_mapping = dict()
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args.slides_dir = f"{args.data_dir}/{args.slides_dir}/"
     args.masks_dir = f"{args.data_dir}/{args.masks_dir}/"
-    args.train_slide_file = f"{args.data_dir}/{args.train_slide_file}/"
+    args.train_slide_file = f"{args.data_dir}/{args.train_slide_file}"
     args.out_dir = f"{args.data_dir}/{args.out_dir}/"
 
     if not os.path.isdir(args.out_dir):

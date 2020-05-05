@@ -1,14 +1,12 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from preprocessing.tile_generation.tile_generator_abc import TileGeneratorABC
+from preprocessing.tile_generation.tile_generation_abc import TileGeneratorABC
 from preprocessing.tile_generation.utils import prep_utils
 from PIL import Image
 import numpy as np
 import openslide
 import time
-import h5py
-import cv2
 from preprocessing.tissue_detection import threshold_based
 
 """
@@ -29,14 +27,14 @@ class TileGeneratorGrid(TileGeneratorABC):
         """
         self.slide = openslide.OpenSlide(f"{slides_dir}/{slide_name}")
         self.slide_id = slide_name.split(".")[0]
-        if os.path.isfile(f'{self.slide_id}_mask.tiff', masks_dir):
-            self.label_mask = openslide.OpenSlide()
+        if os.path.isfile(f'{masks_dir}/{self.slide_id}_mask.tiff'):
+            self.label_mask = openslide.OpenSlide(f'{masks_dir}/{self.slide_id}_mask.tiff')
         else:
             self.label_mask = None
 
         # whether to print logs
         self.verbose = verbose
-        self.ihc = prep_utils.check_ihc_slide(self.osr) if check_ihc else False
+        self.ihc = prep_utils.check_ihc_slide(self.slide) if check_ihc else False
 
     def is_ihc_slide(self):
         return self.ihc
@@ -65,10 +63,10 @@ class TileGeneratorGrid(TileGeneratorABC):
         tissue_roi = threshold_based.get_tissue_area(self.slide)
         for i in range(0, int(self.slide.level_dimensions[self.slide.level_count - 1][1]), interval):
             for j in range(0, int(self.slide.level_dimensions[self.slide.level_count - 1][0]), interval):
-                if (i * lowest_rate + self.tile_size) <= self.slide.level_dimensions[0][1] and (
-                            j * lowest_rate + self.tile_size) <= self.slide.level_dimensions[0][0]:
+                if (i * lowest_rate + tile_size) <= self.slide.level_dimensions[0][1] and (
+                            j * lowest_rate + tile_size) <= self.slide.level_dimensions[0][0]:
                     size_x = small_tile_size if i + small_tile_size <= \
-                                                self.osr.level_dimensions[self.slide.level_count - 1][1] \
+                                                self.slide.level_dimensions[self.slide.level_count - 1][1] \
                         else self.slide.level_dimensions[self.slide.level_count - 1][1] - i
                     size_y = small_tile_size if j + small_tile_size <= \
                                                 self.slide.level_dimensions[self.slide.level_count - 1][0] \
@@ -111,10 +109,10 @@ class TileGeneratorGrid(TileGeneratorABC):
 
     def extract_label_mask(self, location, tile_size, dw_rate=1):
         tile_mask = self.label_mask.read_region((location[0], location[1]), 0, (tile_size, tile_size))
+        tile_mask = np.asarray(tile_mask.split()[0])
         if dw_rate > 1:
             tile_mask = tile_mask[::dw_rate, ::dw_rate]
         return tile_mask
-
 
     def extract_all_tiles(self, tile_size, overlap, thres, dw_rate, normalizer=None, w_label_mask=True):
         """

@@ -9,7 +9,7 @@ class TileGeneratorABC(ABC):
         """
 
     @abstractmethod
-    def get_tile_locations(self, thres):
+    def get_tile_locations(self, tile_size, overlap, thres):
         """Return locations for tiles that can be extracted from the slide
         """
 

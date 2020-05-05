@@ -3,8 +3,8 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from build_dataset.normalization.normalizer_abc import Normaliser
-from build_dataset.normalization.utils import misc_utils as mu
+from preprocessing.normalization.normalizer_abc import Normaliser
+from preprocessing.normalization.utils import misc_utils as mu
 import numpy as np
 import cv2 as cv
 
