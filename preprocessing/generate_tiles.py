@@ -1,5 +1,4 @@
-from preprocessing.tile_generation import generate_grid
-from preprocessing.normalization import reinhard_bg
+import sys
 from multiprocessing import Process, Queue
 import numpy as np
 import os
@@ -8,6 +7,10 @@ import json
 import pandas as pd
 import time
 import lmdb
+sys.path.append("..")
+from preprocessing.tile_generation import generate_grid
+from preprocessing.normalization import reinhard_bg
+
 
 
 def generate_helper(pqueue, slides_dir, masks_dir, tile_size, overlap, thres, dw_rate, verbose, slides_to_process):
@@ -53,7 +56,10 @@ def write_batch_data(env_tiles, env_tissue_masks, env_label_masks, env_locations
                 tile_name = f"{slide_name}_{cur_loc[0]}_{cur_loc[1]}"
                 txn_tiles.put(str(tile_name).encode(), cur_tile.astype(np.uint8).tobytes())
                 txn_masks.put(str(tile_name).encode(), cur_mask.astype(np.uint8).tobytes())
-                if data['label_masks']:
+                # Workaround to deal with deciding if an object is None or numpy array
+                if data['label_masks'] is None:
+                    cur_label = None
+                else:
                     cur_label = data['label_masks'][i]
                     txn_labels.put(str(tile_name).encode(), cur_label.astype(np.uint8).tobytes())
             txn_locs.put(str(slide_name).encode(), data['locations'].astype(np.int64).tobytes())
@@ -65,16 +71,16 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
                     overlap, thres, dw_rate, verbose):
 
     slides_to_process = []
-    env_tiles = lmdb.open(f"{out_dir}/tiles", map_size=6e+14)
-    env_label_masks = lmdb.open(f"{out_dir}/label_masks", map_size=6e+12)
-    env_tissue_masks = lmdb.open(f"{out_dir}/tissue_masks", map_size=6e+12)
+    env_tiles = lmdb.open(f"{out_dir}/tiles", map_size=6e+13)
+    env_label_masks = lmdb.open(f"{out_dir}/label_masks", map_size=6e+11)
+    env_tissue_masks = lmdb.open(f"{out_dir}/tissue_masks", map_size=6e+11)
     env_locations = lmdb.open(f"{out_dir}/locations", map_size=6e+11)
 
     with env_locations.begin(write=False) as txn:
         for slide_name in slides_list:
             if txn.get(slide_name.encode()) is None:
                 slides_to_process.append(slide_name)
-
+    # slides_to_process = slides_to_process[:5]
     print("Total %d slides to process" % len(slides_to_process))
     batch_size = len(slides_to_process) // num_ps
     # Spawn multiple processes to extract tiles: (each handle a portion of data).
@@ -137,8 +143,10 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
     slides_tiles_mapping = dict()
     with env_locations.begin(write=False) as txn:
         for slide_name, locations in txn.cursor():
-            slide_name = str(slide_name)
+            slide_name = str(slide_name.decode('ascii'))
             slides_tiles_mapping[slide_name] = []
+            locations = np.frombuffer(locations, dtype=np.int64)
+            locations = locations.reshape(-1, 2)
             for loc in locations:
                 slides_tiles_mapping[slide_name].append(f"{slide_name}_{loc[0]}_{loc[1]}")
     json.dump(slides_tiles_mapping, open(f"{out_dir}/slides_tiles_mappding.json", "w"))

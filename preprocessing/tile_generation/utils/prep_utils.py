@@ -18,7 +18,7 @@ def check_ihc_slide(slide):
     # brownish stain
     roi_ihc = (sample_hsv[:, :, 0] >= 0.056) & (sample_hsv[:, :, 0] <= 0.34) & (sample_hsv[:, :, 2] > 0.2) & (
                 sample_hsv[:, :, 1] > 0.04)
-    skmp.remove_small_holes(roi_ihc, min_size=500, connectivity=20, in_place=True)
+    skmp.remove_small_holes(roi_ihc, area_threshold=500, connectivity=20, in_place=True)
     skmp.remove_small_objects(roi_ihc, min_size=500, connectivity=20, in_place=True)
 
     is_ihc = float(np.sum(roi_ihc)) / float((roi_ihc.shape[0] * roi_ihc.shape[1])) > 0.01
@@ -36,14 +36,14 @@ def generate_binary_mask(tile):
     roi1 = (tile_hsv[:, :, 0] >= 0.33) & (tile_hsv[:, :, 0] <= 0.67)
     roi1 = ~roi1
 
-    skmp.remove_small_holes(roi1, min_size=500, connectivity=20, in_place=True)
+    skmp.remove_small_holes(roi1, area_threshold=500, connectivity=20, in_place=True)
     skmp.remove_small_objects(roi1, min_size=500, connectivity=20, in_place=True)
 
     tile_gray = color.rgb2gray(np.asarray(tile))
     masked_sample = np.multiply(tile_gray, roi1)
     roi2 = (masked_sample <= 0.8) & (masked_sample >= 0.2)
 
-    skmp.remove_small_holes(roi2, min_size=500, connectivity=20, in_place=True)
+    skmp.remove_small_holes(roi2, area_threshold=500, connectivity=20, in_place=True)
     skmp.remove_small_objects(roi2, min_size=500, connectivity=20, in_place=True)
 
     return tile_hsv, roi2
