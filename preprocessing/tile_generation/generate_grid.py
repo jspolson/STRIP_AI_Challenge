@@ -78,7 +78,8 @@ class TileGeneratorGrid(TileGeneratorABC):
                         location_tracker[counter][0] = int(j * lowest_rate)
                         location_tracker[counter][1] = int(i * lowest_rate)
                         counter += 1
-        print("Generate %d tiles in the grid" % counter)
+        if self.verbose:
+            print("Generate %d tiles in the grid" % counter)
         return counter, location_tracker
 
     # Generate tiles based on location at highest magnification

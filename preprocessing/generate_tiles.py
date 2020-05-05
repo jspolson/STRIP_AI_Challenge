@@ -41,7 +41,7 @@ def generate_helper(pqueue, slides_dir, masks_dir, tile_size, overlap, thres, dw
     pqueue.put('Done')
 
 
-def write_batch_data(env_tiles, env_tissue_masks, env_label_masks, env_locations, batch_data, tot_len, start_counter):
+def write_batch_data(env_tiles, env_tissue_masks, env_label_masks, env_locations, batch_data, tot_len, start_counter, verbose):
     end_counter = start_counter + len(batch_data)
     with env_tiles.begin(write=True) as txn_tiles, env_tissue_masks.begin(write=True) as txn_masks, \
             env_label_masks.begin(write=True) as txn_labels, env_locations.begin(write=True) as txn_locs:
@@ -63,7 +63,8 @@ def write_batch_data(env_tiles, env_tissue_masks, env_label_masks, env_locations
                     cur_label = data['label_masks'][i]
                     txn_labels.put(str(tile_name).encode(), cur_label.astype(np.uint8).tobytes())
             txn_locs.put(str(slide_name).encode(), data['locations'].astype(np.int64).tobytes())
-    print("Finish writing [%d]/[%d], time: %f" % (end_counter, tot_len, time.time() - write_start))
+    if verbose:
+        print("Finish writing [%d]/[%d], time: %f" % (end_counter, tot_len, time.time() - write_start))
     return end_counter
 
 
@@ -72,8 +73,8 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
 
     slides_to_process = []
     env_tiles = lmdb.open(f"{out_dir}/tiles", map_size=6e+13)
-    env_label_masks = lmdb.open(f"{out_dir}/label_masks", map_size=6e+11)
-    env_tissue_masks = lmdb.open(f"{out_dir}/tissue_masks", map_size=6e+11)
+    env_label_masks = lmdb.open(f"{out_dir}/label_masks", map_size=6e+12)
+    env_tissue_masks = lmdb.open(f"{out_dir}/tissue_masks", map_size=6e+12)
     env_locations = lmdb.open(f"{out_dir}/locations", map_size=6e+11)
 
     with env_locations.begin(write=False) as txn:
@@ -111,7 +112,8 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
     while True:
         # Block if necessary until an item is available.
         data = pqueue.get()
-        print("Queue len: %d" % pqueue.qsize())
+        if verbose:
+            print("Queue len: %d" % pqueue.qsize())
         # Done indicates job on one process is finished.
         if data == "Done":
             num_done += 1
@@ -127,11 +129,11 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
         if len(batches) == write_batch_size:
             counter = \
                 write_batch_data(env_tiles, env_tissue_masks, env_label_masks, env_locations, batches,
-                                 len(slides_to_process), counter)
+                                 len(slides_to_process), counter, verbose)
     # Write the rest data.
     if len(batches) > 0:
         counter = write_batch_data(env_tiles, env_tissue_masks, env_label_masks, env_locations, batches,
-                                   len(slides_to_process), counter)
+                                   len(slides_to_process), counter, verbose)
     for process in reader_processes:
         process.join()
     assert counter == len(slides_to_process), "%d processed slides, %d slides to be processed" \
