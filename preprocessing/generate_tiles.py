@@ -13,6 +13,8 @@ from preprocessing.normalization import reinhard_bg
 
 
 def generate_helper(pqueue, slides_dir, masks_dir, tile_size, overlap, thres, dw_rate, verbose, slides_to_process):
+    if verbose:
+        print("Queue len: %d" % pqueue.qsize())
     tile_normalizer = reinhard_bg.ReinhardNormalizer()
     # use the pre-computed LAB mean and std values
     tile_normalizer.fit(None)
@@ -111,8 +113,6 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
     while True:
         # Block if necessary until an item is available.
         data = pqueue.get()
-        if verbose:
-            print("Queue len: %d" % pqueue.qsize())
         # Done indicates job on one process is finished.
         if data == "Done":
             num_done += 1
