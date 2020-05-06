@@ -150,6 +150,11 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
                     process.join()
                 print("Out of disk memory.")
                 exit()
+            except lmdb.Error:
+                for process in reader_processes:
+                    process.join()
+                print("Unknow LMDB error during wrting.")
+                exit()
 
     # Write the rest data.
     if len(batches) > 0:
