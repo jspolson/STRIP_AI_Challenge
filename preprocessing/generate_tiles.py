@@ -12,7 +12,6 @@ from preprocessing.tile_generation import generate_grid
 from preprocessing.normalization import reinhard_bg
 
 
-
 def generate_helper(pqueue, slides_dir, masks_dir, tile_size, overlap, thres, dw_rate, verbose, slides_to_process):
     tile_normalizer = reinhard_bg.ReinhardNormalizer()
     # use the pre-computed LAB mean and std values
@@ -127,9 +126,31 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
             batches.append(data)
         # Write a batch of data.
         if len(batches) == write_batch_size:
-            counter = \
-                write_batch_data(env_tiles, env_tissue_masks, env_label_masks, env_locations, batches,
-                                 len(slides_to_process), counter, verbose)
+            try:
+                counter = \
+                    write_batch_data(env_tiles, env_tissue_masks, env_label_masks, env_locations, batches,
+                                     len(slides_to_process), counter, verbose)
+            except lmdb.KeyExistsError:
+                for process in reader_processes:
+                    process.join()
+                print("Key exist!")
+                exit()
+            except lmdb.TlsFullError:
+                for process in reader_processes:
+                    process.join()
+                print("Thread-local storage keys full - too many environments open.")
+                exit()
+            except lmdb.MemoryError:
+                for process in reader_processes:
+                    process.join()
+                print("Out of memory.")
+                exit()
+            except lmdb.DiskError:
+                for process in reader_processes:
+                    process.join()
+                print("Out of disk memory.")
+                exit()
+
     # Write the rest data.
     if len(batches) > 0:
         counter = write_batch_data(env_tiles, env_tissue_masks, env_label_masks, env_locations, batches,
