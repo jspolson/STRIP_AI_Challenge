@@ -11,6 +11,7 @@ RUN pip install spams seaborn scikit-image scikit-learn && \
 conda install -c conda-forge tqdm && \
 conda install -c conda-forge ipywidgets && \
 conda install opencv pixman=0.36.0 && \
+conda install -c pytorch -c fastai fastai && \
 pip install h5py lmdb openslide-python tensorboardX Pillow tensorboard && \
 pip install --upgrade jupyter_client && \
 pip install tifffile
