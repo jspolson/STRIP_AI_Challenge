@@ -26,7 +26,11 @@ def generate_helper(pqueue, slides_dir, masks_dir, tile_size, overlap, thres, dw
             = tile_generator.extract_all_tiles(tile_size, overlap, thres, dw_rate, tile_normalizer)
         if len(norm_tiles) == 0:
             counter += 1
-            pqueue.put("empty")
+            data = {
+                "status": "empty",
+                "slide_name": slide_name,
+            }
+            pqueue.put(data)
             continue
 
         data = {
@@ -34,7 +38,8 @@ def generate_helper(pqueue, slides_dir, masks_dir, tile_size, overlap, thres, dw
             "norm_tiles": norm_tiles,
             "tissue_masks": tissue_masks,
             "label_masks": label_masks,
-            "locations": locations
+            "locations": locations,
+            "status": "normal"
         }
         pqueue.put(data)
         counter += 1
@@ -67,6 +72,13 @@ def write_batch_data(env_tiles, env_tissue_masks, env_label_masks, env_locations
     if verbose:
         print("Finish writing [%d]/[%d], time: %f" % (end_counter, tot_len, time.time() - write_start))
     return end_counter
+
+
+def handle_errors(processes, message):
+    for process in processes:
+        process.join()
+    print(message)
+    exit()
 
 
 def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, masks_dir, tile_size,
@@ -119,7 +131,7 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
             print("One part is done!")
             if num_done == num_ps:
                 break
-        elif data == "empty":
+        elif data["status"] == "empty":
             counter += 1
             empty_slides.append(data['slide_name'])
         else:
@@ -131,35 +143,31 @@ def save_tiled_lmdb(slides_list, num_ps, write_batch_size, out_dir, slides_dir, 
                     write_batch_data(env_tiles, env_tissue_masks, env_label_masks, env_locations, batches,
                                      len(slides_to_process), counter, verbose)
             except lmdb.KeyExistsError:
-                for process in reader_processes:
-                    process.join()
-                print("Key exist!")
-                exit()
+                handle_errors(reader_processes, "Key exist!")
             except lmdb.TlsFullError:
-                for process in reader_processes:
-                    process.join()
-                print("Thread-local storage keys full - too many environments open.")
-                exit()
+                handle_errors(reader_processes, "Thread-local storage keys full - too many environments open.")
             except lmdb.MemoryError:
-                for process in reader_processes:
-                    process.join()
-                print("Out of memory.")
-                exit()
+                handle_errors(reader_processes, "Out of LMDB data map size.")
             except lmdb.DiskError:
-                for process in reader_processes:
-                    process.join()
-                print("Out of disk memory.")
-                exit()
+                handle_errors(reader_processes, "Out of disk memory")
             except lmdb.Error:
-                for process in reader_processes:
-                    process.join()
-                print("Unknow LMDB error during wrting.")
-                exit()
+                handle_errors(reader_processes, "Unknown LMDB write errors")
+    try:
+        # Write the rest data.
+        if len(batches) > 0:
+            counter = write_batch_data(env_tiles, env_tissue_masks, env_label_masks, env_locations, batches,
+                                       len(slides_to_process), counter, verbose)
+    except lmdb.KeyExistsError:
+        handle_errors(reader_processes, "Key exist!")
+    except lmdb.TlsFullError:
+        handle_errors(reader_processes, "Thread-local storage keys full - too many environments open.")
+    except lmdb.MemoryError:
+        handle_errors(reader_processes, "Out of LMDB data map size.")
+    except lmdb.DiskError:
+        handle_errors(reader_processes, "Out of disk memory")
+    except lmdb.Error:
+        handle_errors(reader_processes, "Unknown LMDB write errors")
 
-    # Write the rest data.
-    if len(batches) > 0:
-        counter = write_batch_data(env_tiles, env_tissue_masks, env_label_masks, env_locations, batches,
-                                   len(slides_to_process), counter, verbose)
     for process in reader_processes:
         process.join()
     assert counter == len(slides_to_process), "%d processed slides, %d slides to be processed" \
