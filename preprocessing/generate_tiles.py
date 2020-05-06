@@ -69,8 +69,7 @@ def write_batch_data(env_tiles, env_tissue_masks, env_label_masks, env_locations
                     cur_label = data['label_masks'][i]
                     txn_labels.put(str(tile_name).encode(), cur_label.astype(np.uint8).tobytes())
             txn_locs.put(str(slide_name).encode(), data['locations'].astype(np.int64).tobytes())
-    if verbose:
-        print("Finish writing [%d]/[%d], time: %f" % (end_counter, tot_len, time.time() - write_start))
+    print("Finish writing [%d]/[%d], time: %f" % (end_counter, tot_len, time.time() - write_start))
     return end_counter
 
 

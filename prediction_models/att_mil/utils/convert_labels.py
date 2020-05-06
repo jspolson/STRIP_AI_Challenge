@@ -41,4 +41,10 @@ class ConvertKaro:
         # Since there is no Gleason pattern labels for Karolinska data, we only train tiles from pure Gleason slides
         if slide_sg != slide_pg:
             return -1
-
+        unique, counts = np.unique(mask, return_counts=True)
+        pattern_counts = dict(zip(unique, counts))
+        if pattern_counts[2] > 0:
+            if self.binary:
+                return 1
+            else:
+                return slide_pg
