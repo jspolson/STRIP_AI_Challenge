@@ -6,16 +6,14 @@ import warnings
 warnings.filterwarnings("ignore")
 
 ## general package
-import torch
-import torch.nn as nn
 from fastai.vision import *
-# from torch_lr_finder import LRFinder
 from tqdm import trange, tqdm
 from sklearn.metrics import cohen_kappa_score
 ## custom package
 from input.inputPipeline import *
 from model.resnext_ssl import *
 from utiles.radam import *
+
 class Train(object):
     def __init__(self, model, optimizer, scheduler):
         self.model = model
@@ -69,10 +67,10 @@ if __name__ == "__main__":
     csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_train.csv'.format(nfolds)
     image_dir = '../input/panda-16x128x128-tiles-data/train/'
     ## image statistics
-    # mean = torch.tensor([0.90949707, 0.8188697, 0.87795304])
-    # std = torch.tensor([0.36357649, 0.49984502, 0.40477625])
-    mean = torch.tensor([0.5, 0.5, 0.5])
-    std = torch.tensor([0.5, 0.5, 0.5])
+    mean = torch.tensor([0.90949707, 0.8188697, 0.87795304])
+    std = torch.tensor([0.36357649, 0.49984502, 0.40477625])
+    # mean = torch.tensor([0.5, 0.5, 0.5])
+    # std = torch.tensor([0.5, 0.5, 0.5])
     ## image transformation
     tsfm = data_transform(mean, std)
     ## dataset, can fetch data by dataset[idx]
@@ -85,16 +83,11 @@ if __name__ == "__main__":
         model = Model().cuda()
         # optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
         optimizer = Over9000(model.parameters())
-        # scheduler = OneCycleLR(optimizer, num_steps=epochs, lr_range=(1e-4, 1e-3))
         scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
                                                   pct_start = 0.3, div_factor = 100)
         Training = Train(model, optimizer, scheduler)
         for epoch in trange(epochs, desc='epoch'):
             train_loss, val_loss, kappa = Training.train_epoch(trainloader,valloader,criterion)
-            # print("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
-            #                                                                                    train_loss,
-            #                                                                                    val_loss,
-            #                                                                                    kappa))
             tqdm.write("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
                                                                                                train_loss,
                                                                                                val_loss,
