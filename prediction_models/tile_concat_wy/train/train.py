@@ -15,6 +15,7 @@ from sklearn.metrics import cohen_kappa_score
 ## custom package
 from input.inputPipeline import *
 from model.resnext_ssl import *
+from utiles.radam import *
 class Train(object):
     def __init__(self, model, optimizer, scheduler):
         self.model = model
@@ -82,7 +83,8 @@ if __name__ == "__main__":
     for fold in trange(nfolds, desc='fold'):
         trainloader, valloader = crossValData(fold)
         model = Model().cuda()
-        optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
+        # optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
+        optimizer = Over9000()
         # scheduler = OneCycleLR(optimizer, num_steps=epochs, lr_range=(1e-4, 1e-3))
         scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
                                                   pct_start = 0.3, div_factor = 100)
@@ -100,3 +102,4 @@ if __name__ == "__main__":
         del model
         del optimizer
         del Training
+        del scheduler
