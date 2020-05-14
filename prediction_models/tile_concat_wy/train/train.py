@@ -76,15 +76,19 @@ if __name__ == "__main__":
     dataset = PandaPatchDataset(csv_file, image_dir, transform=tsfm)
     ## dataloader
     crossValData = crossValDataloader(csv_file, dataset, bs)
-    model = Model().cuda()
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
     Training = Train(model, optimizer)
     for fold in trange(nfolds, desc='fold'):
+        model = Model().cuda()
         trainloader, valloader = crossValData(fold)
         for epoch in trange(epochs, desc='epoch'):
             train_loss, val_loss, kappa = Training.train_epoch(trainloader,valloader,criterion)
-            print("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
+            # print("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
+            #                                                                                    train_loss,
+            #                                                                                    val_loss,
+            #                                                                                    kappa))
+            tqdm.write("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
                                                                                                train_loss,
                                                                                                val_loss,
                                                                                                kappa))
