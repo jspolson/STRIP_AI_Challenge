@@ -77,11 +77,11 @@ if __name__ == "__main__":
     ## dataloader
     crossValData = crossValDataloader(csv_file, dataset, bs)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
-    Training = Train(model, optimizer)
     for fold in trange(nfolds, desc='fold'):
-        model = Model().cuda()
         trainloader, valloader = crossValData(fold)
+        model = Model().cuda()
+        optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
+        Training = Train(model, optimizer)
         for epoch in trange(epochs, desc='epoch'):
             train_loss, val_loss, kappa = Training.train_epoch(trainloader,valloader,criterion)
             # print("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
@@ -92,3 +92,6 @@ if __name__ == "__main__":
                                                                                                train_loss,
                                                                                                val_loss,
                                                                                                kappa))
+        del model
+        del optimizer
+        del Training
