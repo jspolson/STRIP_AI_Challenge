@@ -11,7 +11,7 @@ import torch.nn as nn
 from fastai.vision import *
 # from torch_lr_finder import LRFinder
 from tqdm import trange, tqdm
-from sklearn.metrics import cohen_kappa_score,confusion_matrix
+from sklearn.metrics import cohen_kappa_score
 ## custom package
 from input.inputPipeline import *
 from model.resnext_ssl import *
@@ -83,7 +83,9 @@ if __name__ == "__main__":
         trainloader, valloader = crossValData(fold)
         model = Model().cuda()
         optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
-        scheduler = OneCycleLR(optimizer, num_steps=epochs, lr_range=(1e-4, 1e-3))
+        # scheduler = OneCycleLR(optimizer, num_steps=epochs, lr_range=(1e-4, 1e-3))
+        scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
+                                                  pct_start = 0.3, div_factor = 100)
         Training = Train(model, optimizer, scheduler)
         for epoch in trange(epochs, desc='epoch'):
             train_loss, val_loss, kappa = Training.train_epoch(trainloader,valloader,criterion)
