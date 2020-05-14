@@ -16,9 +16,10 @@ from sklearn.metrics import cohen_kappa_score,confusion_matrix
 from input.inputPipeline import *
 from model.resnext_ssl import *
 class Train(object):
-    def __init__(self, model, optimizer):
+    def __init__(self, model, optimizer, scheduler):
         self.model = model
         self.optimizer = optimizer
+        self.scheduler = scheduler
     def train_epoch(self,trainloader, valloader, criterion):
         ## train
         self.model.train()
@@ -57,6 +58,7 @@ class Train(object):
         val_preds = torch.argmax(torch.cat(val_preds, 0), 1)
         val_label = torch.cat(val_label)
         kappa = cohen_kappa_score(val_label, val_preds, weights='quadratic')
+        self.scheduler.step()
         return np.mean(train_loss), np.mean(val_loss), kappa
 
 if __name__ == "__main__":
@@ -81,7 +83,8 @@ if __name__ == "__main__":
         trainloader, valloader = crossValData(fold)
         model = Model().cuda()
         optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
-        Training = Train(model, optimizer)
+        scheduler = OneCycleLR(optimizer, num_steps=epochs, lr_range=(1e-4, 1e-3))
+        Training = Train(model, optimizer, scheduler)
         for epoch in trange(epochs, desc='epoch'):
             train_loss, val_loss, kappa = Training.train_epoch(trainloader,valloader,criterion)
             # print("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
