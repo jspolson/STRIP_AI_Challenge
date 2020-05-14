@@ -57,7 +57,7 @@ class Train(object):
         val_preds = torch.argmax(torch.cat(val_preds, 0), 1)
         val_label = torch.cat(val_label)
         kappa = cohen_kappa_score(val_label, val_preds, weights='quadratic')
-        return np.mean(train_loss), np.mean(val_loss), kappa, optimizer
+        return np.mean(train_loss), np.mean(val_loss), kappa
 
 if __name__ == "__main__":
     nfolds = 5
