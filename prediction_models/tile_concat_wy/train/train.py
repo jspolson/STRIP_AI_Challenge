@@ -84,7 +84,7 @@ if __name__ == "__main__":
         trainloader, valloader = crossValData(fold)
         model = Model().cuda()
         # optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
-        optimizer = Over9000()
+        optimizer = Over9000(model.parameters())
         # scheduler = OneCycleLR(optimizer, num_steps=epochs, lr_range=(1e-4, 1e-3))
         scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
                                                   pct_start = 0.3, div_factor = 100)
