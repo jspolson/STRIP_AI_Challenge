@@ -1,4 +1,5 @@
-from torch.optim.optimizer import Optimizer, Adam
+from torch.optim.optimizer import Optimizer
+from torch.optim import Adam
 from collections import defaultdict
 
 class RAdam(Optimizer):
