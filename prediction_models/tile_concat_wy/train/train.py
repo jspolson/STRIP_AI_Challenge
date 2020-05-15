@@ -71,7 +71,7 @@ def save_checkpoint(state, is_best, fname):
         shutil.copyfile('{}_ckpt.pth.tar'.format(fname), '{}_best.pth.tar'.format(fname))
 
 if __name__ == "__main__":
-    fname = "Resnext50"
+    fname = "Resnext50_Adam"
     nfolds = 5
     bs = 32
     epochs = 16
