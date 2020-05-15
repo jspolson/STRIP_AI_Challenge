@@ -16,7 +16,7 @@ from sklearn.metrics import cohen_kappa_score
 from input.inputPipeline import *
 from model.resnext_ssl import *
 from utiles.radam import *
-from utiles.utiles import *
+from utils.utiles import *
 
 class Train(object):
     def __init__(self, model, optimizer, scheduler):
