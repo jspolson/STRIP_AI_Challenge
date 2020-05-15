@@ -102,8 +102,8 @@ if __name__ == "__main__":
     for fold in trange(nfolds, desc='fold'):
         trainloader, valloader = crossValData(fold)
         model = Model().cuda()
-        # optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
-        optimizer = Over9000(model.parameters())
+        optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
+        # optimizer = Over9000(model.parameters())
         scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
                                                   pct_start = 0.3, div_factor = 100)
         Training = Train(model, optimizer, scheduler)
