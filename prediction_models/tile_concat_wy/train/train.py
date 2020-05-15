@@ -1,18 +1,22 @@
 ## system package
-import os, sys
+import os, sys, shutil
 sys.path.append('../')
 from pathlib import Path
+from datetime import datetime
+from pytz import timezone
 import warnings
 warnings.filterwarnings("ignore")
 
 ## general package
 from fastai.vision import *
+from torch.utils.tensorboard import SummaryWriter
 from tqdm import trange, tqdm
 from sklearn.metrics import cohen_kappa_score
 ## custom package
 from input.inputPipeline import *
 from model.resnext_ssl import *
 from utiles.radam import *
+from utiles.utiles import *
 
 class Train(object):
     def __init__(self, model, optimizer, scheduler):
@@ -60,7 +64,14 @@ class Train(object):
         self.scheduler.step()
         return np.mean(train_loss), np.mean(val_loss), kappa
 
+
+def save_checkpoint(state, is_best, fname):
+    torch.save(state, '{}_ckpt.pth.tar'.format(fname)
+    if is_best:
+        shutil.copyfile('{}_ckpt.pth.tar'.format(fname), '{}_best.pth.tar'.format(fname))
+
 if __name__ == "__main__":
+    fname = "Resnext50"
     nfolds = 5
     bs = 32
     epochs = 16
@@ -77,7 +88,17 @@ if __name__ == "__main__":
     dataset = PandaPatchDataset(csv_file, image_dir, transform=tsfm)
     ## dataloader
     crossValData = crossValDataloader(csv_file, dataset, bs)
+
     criterion = nn.CrossEntropyLoss()
+
+    ## tensorboard writer
+    writerDir = './runs'
+    check_folder_exists(writerDir)
+    timeStamp = datetime.now(timezone('US/Pacific')).strftime("%m_%d_%H_%M_%S")
+    writer = SummaryWriter('{}/{}_{}'.format(writerDir,fname,timeStamp))
+    ## weight saving
+    weightsDir = './weights/{}'.format(fname)
+    check_folder_exists(weightsDir)
     for fold in trange(nfolds, desc='fold'):
         trainloader, valloader = crossValData(fold)
         model = Model().cuda()
@@ -86,13 +107,29 @@ if __name__ == "__main__":
         scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
                                                   pct_start = 0.3, div_factor = 100)
         Training = Train(model, optimizer, scheduler)
+        best_kappa = 0
+        weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
         for epoch in trange(epochs, desc='epoch'):
             train_loss, val_loss, kappa = Training.train_epoch(trainloader,valloader,criterion)
             tqdm.write("Epoch {}, train loss: {:.4f}, val loss: {:.4f}, kappa-score: {:.4f}.\n".format(epoch,
                                                                                                train_loss,
                                                                                                val_loss,
                                                                                                kappa))
+            writer.add_scalar('Fold:{}/train_loss'.format(fold), train_loss, epoch)
+            writer.add_scalar('Fold:{}/val_loss'.format(fold), val_loss, epoch)
+            writer.add_scalar('Fold:{}/kappa_score'.format(fold), kappa, epoch)
+            writer.flush()
+            ## save the checkpoints and best model
+            is_best = kappa > best_kappa
+            save_checkpoint({
+                'epoch': epoch,
+                'state_dict': model.state_dict(),
+                'kappa': kappa,
+                'optimizer': optimizer.state_dict(),
+            }, is_best, weightsPath)
+            best_kappa = kappa if is_best
         del model
         del optimizer
         del Training
         del scheduler
+    writer.close()
