@@ -74,7 +74,7 @@ if __name__ == "__main__":
     fname = "Resnext50_Adam_NoScheduler"
     nfolds = 5
     bs = 32
-    epochs = 16
+    epochs = 30
     csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_train.csv'.format(nfolds)
     image_dir = '../input/panda-16x128x128-tiles-data/train/'
     ## image statistics
@@ -102,11 +102,11 @@ if __name__ == "__main__":
     for fold in trange(nfolds, desc='fold'):
         trainloader, valloader = crossValData(fold)
         model = Model().cuda()
-        optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
-        scheduler = optim.lr_scheduler.StepLR(optimizer, 1, 1)
-        # optimizer = Over9000(model.parameters())
-        # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
-        #                                           pct_start = 0.3, div_factor = 100)
+        # optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
+        # scheduler = optim.lr_scheduler.StepLR(optimizer, 1, 1)
+        optimizer = Over9000(model.parameters())
+        scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
+                                                  pct_start = 0.3, div_factor = 100)
         Training = Train(model, optimizer, scheduler)
         best_kappa = 0
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
