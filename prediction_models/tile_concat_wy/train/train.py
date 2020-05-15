@@ -66,7 +66,7 @@ class Train(object):
 
 
 def save_checkpoint(state, is_best, fname):
-    torch.save(state, '{}_ckpt.pth.tar'.format(fname)
+    torch.save(state, '{}_ckpt.pth.tar'.format(fname))
     if is_best:
         shutil.copyfile('{}_ckpt.pth.tar'.format(fname), '{}_best.pth.tar'.format(fname))
 
@@ -127,7 +127,7 @@ if __name__ == "__main__":
                 'kappa': kappa,
                 'optimizer': optimizer.state_dict(),
             }, is_best, weightsPath)
-            best_kappa = kappa if is_best
+            best_kappa = kappa if is_best else best_kappa
         del model
         del optimizer
         del Training
