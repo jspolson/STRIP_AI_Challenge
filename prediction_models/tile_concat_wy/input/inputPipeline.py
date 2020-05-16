@@ -81,7 +81,7 @@ class PandaPatchDataset(Dataset):
         return x
 
 class PandaPatchDatasetInfer(Dataset):
-    def __init__(self, csv_file, image_dir, N, sz = 128):
+    def __init__(self, csv_file, image_dir, transform = None, N = 12, sz = 128):
         """
         Args:
             csv_file (string): Path to the csv file with annotations.
@@ -95,6 +95,7 @@ class PandaPatchDatasetInfer(Dataset):
         self.image_id = list(self.test_csv.image_id)
         self.N = N
         self.sz = sz
+        self.transform = transform
 
     def __len__(self):
         return len(self.test_csv)
