@@ -8,6 +8,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
+import skimage.io
 
 class crossValInx(object):
     def __init__(self, csv_file):
@@ -79,6 +80,50 @@ class PandaPatchDataset(Dataset):
             x = after_open(x)
         return x
 
+class PandaPatchDatasetInfer(Dataset):
+    def __init__(self, csv_file, image_dir, N, sz = 128):
+        """
+        Args:
+            csv_file (string): Path to the csv file with annotations.
+            image_dir (string): Directory with all the images.
+            N (interger): Number of tiles selected for each slide.
+            transform (callable, optional): Optional transform to be applied
+                on a sample.
+        """
+        self.test_csv = pd.read_csv(csv_file)
+        self.image_dir = image_dir
+        self.image_id = list(self.test_csv.image_id)
+        self.N = N
+        self.sz = sz
+
+    def __len__(self):
+        return len(self.test_csv)
+
+    def __getitem__(self, idx):
+        name = self.names[idx]
+        img = skimage.io.MultiImage(os.path.join(self.image_dir, name + '.tiff'))[-1] # get the lowest resolution
+        imgs = self.tile_image(img) / 255.0 ## list of tiles per slide
+        if self.transform:
+            imgs = [self.transform(img) for img in imgs]
+        ## convert the output to tensor
+        # imgs = [torch.tensor(img) for img in imgs]
+        imgs = torch.stack(imgs)
+        return imgs
+
+    def tile_image(self, img):
+        shape = img.shape
+        pad0, pad1 = (self.sz - shape[0] % self.sz) % self.sz, (self.sz - shape[1] % self.sz) % self.sz
+        img = np.pad(img, [[pad0 // 2, pad0 - pad0 // 2], [pad1 // 2, pad1 - pad1 // 2], [0, 0]],
+                     constant_values=255)
+        img = img.reshape(img.shape[0] // self.sz, self.sz, img.shape[1] // self.sz, self.sz, 3)
+        img = img.transpose(0, 2, 1, 3, 4).reshape(-1, self.sz, self.sz, 3)
+        if len(img) < self.N:
+            img = np.pad(img, [[0, N - len(img)], [0, 0], [0, 0], [0, 0]], constant_values=255)
+        idxs = np.argsort(img.reshape(img.shape[0], -1).sum(-1))[:self.N]
+        img = img[idxs]
+        return img
+
+
 def data_transform(mean = (0.5,0.5,0.5), std = (0.5,0.5,0.5)):
     tsfm = transforms.Compose(
         [transforms.RandomHorizontalFlip(),
@@ -95,6 +140,11 @@ def dataloader_collte_fn(batch):
     target = [item['isup_grade'] for item in batch]
     target = torch.stack(target)
     return [imgs, target]
+
+def dataloader_collte_fn_infer(batch):
+    imgs = [item['image'] for item in batch]
+    imgs = torch.stack(imgs)
+    return imgs
 
 if __name__ == "__main__":
     ## input files and folders
