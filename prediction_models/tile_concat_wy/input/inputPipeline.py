@@ -114,12 +114,12 @@ class PandaPatchDatasetInfer(Dataset):
     def tile_image(self, img):
         shape = img.shape
         pad0, pad1 = (self.sz - shape[0] % self.sz) % self.sz, (self.sz - shape[1] % self.sz) % self.sz
-        img = np.pad(img, [[pad0 // 2, pad0 - pad0 // 2], [pad1 // 2, pad1 - pad1 // 2], [0, 0]],
+        img = np.pad(img, [[pad0 // 2, pad0 - pad0 // 2], [pad1 // 2, pad1 - pad1 // 2], [0, 0]], mode='constant',
                      constant_values=255)
         img = img.reshape(img.shape[0] // self.sz, self.sz, img.shape[1] // self.sz, self.sz, 3)
         img = img.transpose(0, 2, 1, 3, 4).reshape(-1, self.sz, self.sz, 3)
         if len(img) < self.N:
-            img = np.pad(img, [[0, N - len(img)], [0, 0], [0, 0], [0, 0]], constant_values=255)
+            img = np.pad(img, [[0, N - len(img)], [0, 0], [0, 0], [0, 0]], mode='constant', constant_values=255)
         idxs = np.argsort(img.reshape(img.shape[0], -1).sum(-1))[:self.N]
         img = img[idxs]
         return img
