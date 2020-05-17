@@ -109,7 +109,7 @@ class PandaPatchDatasetInfer(Dataset):
         ## convert the output to tensor
         # imgs = [torch.tensor(img) for img in imgs]
         imgs = torch.stack(imgs)
-        return [imgs, name]
+        return {'image': imgs, 'name': name}
 
     def tile_image(self, img):
         shape = img.shape
@@ -145,7 +145,7 @@ def dataloader_collte_fn(batch):
 def dataloader_collte_fn_infer(batch):
     imgs = [item['image'] for item in batch]
     imgs = torch.stack(imgs)
-    name = [item['image_id'] for item in batch]
+    name = [item['name'] for item in batch]
     name = torch.stack(name)
     return [imgs, name]
 
