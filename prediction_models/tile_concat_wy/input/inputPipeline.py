@@ -146,7 +146,6 @@ def dataloader_collte_fn_infer(batch):
     imgs = [item['image'] for item in batch]
     imgs = torch.stack(imgs)
     name = [item['name'] for item in batch]
-    name = torch.stack(name)
     return [imgs, name]
 
 if __name__ == "__main__":
