@@ -101,7 +101,7 @@ class PandaPatchDatasetInfer(Dataset):
         return len(self.test_csv)
 
     def __getitem__(self, idx):
-        name = self.names[idx]
+        name = self.test_csv.image_id[idx]
         img = skimage.io.MultiImage(os.path.join(self.image_dir, name + '.tiff'))[-1] # get the lowest resolution
         imgs = self.tile_image(img) / 255.0 ## list of tiles per slide
         if self.transform:
@@ -109,7 +109,7 @@ class PandaPatchDatasetInfer(Dataset):
         ## convert the output to tensor
         # imgs = [torch.tensor(img) for img in imgs]
         imgs = torch.stack(imgs)
-        return imgs
+        return [imgs, name]
 
     def tile_image(self, img):
         shape = img.shape
@@ -145,7 +145,9 @@ def dataloader_collte_fn(batch):
 def dataloader_collte_fn_infer(batch):
     imgs = [item['image'] for item in batch]
     imgs = torch.stack(imgs)
-    return imgs
+    name = [item['image_id'] for item in batch]
+    name = torch.stack(name)
+    return [imgs, name]
 
 if __name__ == "__main__":
     ## input files and folders
