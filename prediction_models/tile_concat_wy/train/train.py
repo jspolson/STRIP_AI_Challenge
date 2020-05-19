@@ -53,6 +53,7 @@ class Train(object):
                 optimizer.zero_grad()
                 # forward + backward + optimize
                 outputs = model(inputs.cuda())
+                print(outputs.type(), outputs.shape, labels.type(), labels.shape())
                 loss = criterion(outputs, labels.cuda())
                 val_loss.append(loss.item())
                 val_label.append(labels.cpu())
