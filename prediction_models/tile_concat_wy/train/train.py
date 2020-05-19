@@ -59,8 +59,6 @@ class Train(object):
                 val_loss.append(loss.item())
                 val_label.append(labels.cpu())
                 val_preds.append(outputs.cpu())
-        scheduler.step()
-
         # val_preds = torch.argmax(torch.cat(val_preds, 0), 1) # for classification
         val_label = torch.cat(val_label)
         val_preds = torch.cat(val_preds, 0).round()
