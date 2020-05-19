@@ -71,7 +71,8 @@ def save_checkpoint(state, is_best, fname):
     torch.save(state, '{}_ckpt.pth.tar'.format(fname))
     if is_best:
         # shutil.copyfile('{}_ckpt.pth.tar'.format(fname), '{}_best.pth.tar'.format(fname))
-        torch.save(state.pop('optimizer'), '{}_best.pth.tar'.format(fname)) ## only save weights for best model
+        state = state['state_dict']
+        torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
     fname = "Resnext50_reg_scheduler"
