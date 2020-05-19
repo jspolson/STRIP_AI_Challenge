@@ -57,9 +57,11 @@ class Train(object):
                 val_loss.append(loss.item())
                 val_label.append(labels.cpu())
                 val_preds.append(outputs.cpu())
-        # scheduler.step()
-        val_preds = torch.argmax(torch.cat(val_preds, 0), 1)
+        scheduler.step()
+
+        # val_preds = torch.argmax(torch.cat(val_preds, 0), 1) # for classification
         val_label = torch.cat(val_label)
+        val_preds = torch.cat(val_preds, 0).round()
         kappa = cohen_kappa_score(val_label, val_preds, weights='quadratic')
         self.scheduler.step()
         return np.mean(train_loss), np.mean(val_loss), kappa
@@ -72,8 +74,8 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state.pop('optimizer'), '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Resnext50_30epoch"
-    nfolds = 5
+    fname = "Resnext50_reg"
+    nfolds = 4
     bs = 32
     epochs = 30
     csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_train.csv'.format(nfolds)
@@ -90,7 +92,8 @@ if __name__ == "__main__":
     ## dataloader
     crossValData = crossValDataloader(csv_file, dataset, bs)
 
-    criterion = nn.CrossEntropyLoss()
+    # criterion = nn.CrossEntropyLoss()
+    criterion = nn.MSELoss()
 
     ## tensorboard writer
     writerDir = './runs'
@@ -102,7 +105,7 @@ if __name__ == "__main__":
     check_folder_exists(weightsDir)
     for fold in trange(nfolds, desc='fold'):
         trainloader, valloader = crossValData(fold)
-        model = Model().cuda()
+        model = Model(n = 1).cuda()
         # optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
         # scheduler = optim.lr_scheduler.StepLR(optimizer, 1, 1)
         optimizer = Over9000(model.parameters())
