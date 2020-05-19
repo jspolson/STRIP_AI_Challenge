@@ -28,15 +28,16 @@ class Train(object):
         self.model.train()
         train_loss = []
         for i, data in enumerate(tqdm(trainloader, desc='trainIter'), start=0):
-            #             if i >= 50:
-            #                 break
+            # if i >= 50:
+            #     break
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data
             # zero the parameter gradients
             self.optimizer.zero_grad()
             # forward + backward + optimize
             outputs = model(inputs.cuda())
-            loss = criterion(outputs, labels.cuda())
+            outputs = outputs.squeeze(dim = 1) # for regression
+            loss = criterion(outputs, labels.float().cuda())
             train_loss.append(loss.item())
             loss.backward()
             self.optimizer.step()
@@ -53,9 +54,8 @@ class Train(object):
                 optimizer.zero_grad()
                 # forward + backward + optimize
                 outputs = model(inputs.cuda())
-                print(outputs.type(), outputs.shape, labels.type(), labels.shape())
-                exit()
-                loss = criterion(outputs, labels.cuda())
+                outputs = outputs.squeeze(dim=1)  # for regression
+                loss = criterion(outputs, labels.float().cuda())
                 val_loss.append(loss.item())
                 val_label.append(labels.cpu())
                 val_preds.append(outputs.cpu())
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     fname = "Resnext50_reg"
     nfolds = 4
     bs = 32
-    epochs = 30
+    epochs = 16
     csv_file = '../input/panda-16x128x128-tiles-data/{}_fold_train.csv'.format(nfolds)
     image_dir = '../input/panda-16x128x128-tiles-data/train/'
     ## image statistics
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     ## image transformation
     tsfm = data_transform(mean, std)
     ## dataset, can fetch data by dataset[idx]
-    dataset = PandaPatchDataset(csv_file, image_dir, transform=tsfm)
+    dataset = PandaPatchDataset(csv_file, image_dir, transform=tsfm, N = 12)
     ## dataloader
     crossValData = crossValDataloader(csv_file, dataset, bs)
 
