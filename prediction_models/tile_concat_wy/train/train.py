@@ -75,7 +75,7 @@ def save_checkpoint(state, is_best, fname):
         torch.save(state, '{}_best.pth.tar'.format(fname)) ## only save weights for best model
 
 if __name__ == "__main__":
-    fname = "Resnext50_reg_30scheduler"
+    fname = "Resnext50_reg_30"
     nfolds = 4
     bs = 32
     epochs = 30
@@ -111,7 +111,7 @@ if __name__ == "__main__":
         # scheduler = optim.lr_scheduler.StepLR(optimizer, 1, 1)
         optimizer = Over9000(model.parameters())
         scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr = 1e-3, total_steps = epochs,
-                                                  pct_start = 0.0, div_factor = 100)
+                                                  pct_start = 0.3, div_factor = 100)
         Training = Train(model, optimizer, scheduler)
         best_kappa = 0
         weightsPath = os.path.join(weightsDir, '{}_{}'.format(fname, fold))
