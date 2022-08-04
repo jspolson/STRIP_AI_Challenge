@@ -12,8 +12,8 @@ RUN apt-get update --fix-missing && \
 RUN apt install -y --no-install-recommends openssh-server
 
 #install requirements
-COPY requirements.txt requirements.txt
-RUN pip install -r requirements.txt
+#COPY requirements.txt requirements.txt
+#RUN pip install -r requirements.txt
 
 RUN pip install torch==1.7.0 torchvision==0.11.0 -f https://download.pytorch.org/whl/cu101/torch_stable.html
 
